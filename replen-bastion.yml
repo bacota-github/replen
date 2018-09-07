@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Database:
+    Type: String
+  Username:
+    Type: String
+  Password:
+    Type: String
+  Endpoint:
+    Type: String
+  SecurityGroupId:
+    Type: String
+  SubnetId:
+    Type: String
+    
+Resources:
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.nano
+      SecurityGroupIds: [ !Ref SecurityGroupId ]
+      SubnetId: !Ref SubnetId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum -y update
+          yum -y install mysql
+          yum -y install httpd
+          yum -y install php
+          /usr/local/bin/configure-database.sh ${Username} ${Password} ${Database} ${Endpoint}
+          /usr/local/bin/connect-aurora.sh < /usr/local/lib/loadReplen.sql
+      Tags:
+        - Key: Name
+          Value: REPLEN-Bastion
+      KeyName: replen-server
+      ImageId: ami-02e08a9afb9fad731
