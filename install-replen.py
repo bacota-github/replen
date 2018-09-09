@@ -87,4 +87,12 @@ stackId = cf.create_stack(
 )['StackId']
 
 
+stacks=[]
 
+while (len(stacks) == 0 or stacks[0]['StackStatus'] == 'CREATE_IN_PROGRESS'):
+    time.sleep(5)
+    stacks=cf.describe_stacks(
+        StackName=stackName+'-bastion'
+    )['Stacks']
+
+print(stacks[0]['Outputs'][0]['OutputValue'])
