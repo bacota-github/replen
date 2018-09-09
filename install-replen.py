@@ -2,27 +2,19 @@ import boto3
 import sys
 import time
 
-if (len(sys.argv) < 4):
-    print("Required arguments: region bucket-name stack-name database-password")
+if (len(sys.argv) < 3):
+    print("Required arguments: region stack-name database-password")
     exit(1)
 
 region = sys.argv[1]
-bucketName = sys.argv[2]
-stackName = sys.argv[3]
-password = sys.argv[4]
+stackName = sys.argv[2]
+password = sys.argv[3]
 
 def readFile(fileName, mode="r"):
     f = open(fileName, mode)
     content = f.read()
     f.close()
     return content
-
-s3 = boto3.client('s3', region_name=region)
-#s3.create_bucket(
-#    Bucket=bucketName,
-#    CreateBucketConfiguration = {
-#        'LocationConstraint': region
-#   })
 
 cf = boto3.client('cloudformation', region_name=region)
 
@@ -77,15 +69,6 @@ endpoint=response['DBCluster']['Endpoint']
 connectScript='connect-aurora.sh'
 sqlScript='loadReplen.sql'
 
-s3.upload_file(sqlScript, bucketName, sqlScript)
-f = open(connectScript, "w")
-f.write('#!/bin/bash\n')
-f.write(f'mysql -u{stackName}  -p{password} -h{endpoint} {stackName}\n')
-f.close()
-
-s3.upload_file(connectScript, bucketName, connectScript)
-s3.upload_file(sqlScript, bucketName, sqlScript)
-
 time.sleep(120) #wait for database cluster to be completed
 
 ec2Template=readFile('replen-bastion.yml')
@@ -94,8 +77,8 @@ stackId = cf.create_stack(
     TemplateBody=ec2Template,
     Capabilities=['CAPABILITY_IAM'],
     Parameters=[
-        {'ParameterKey':'Database', 'ParameterValue': stackName},
-        {'ParameterKey':'Username', 'ParameterValue':stackName},
+        {'ParameterKey':'Database', 'ParameterValue': 'replen'},
+        {'ParameterKey':'Username', 'ParameterValue':'replen'},
         {'ParameterKey':'Password', 'ParameterValue':password},
         {'ParameterKey':'Endpoint', 'ParameterValue':response['DBCluster']['Endpoint']},
         {'ParameterKey':'SecurityGroupId', 'ParameterValue':idByName['BastionSecurityGroup']},

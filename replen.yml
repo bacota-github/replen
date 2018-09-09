@@ -131,7 +131,7 @@ Resources:
       GroupId: !Ref DatabaseSecurityGroup
       IpProtocol: tcp
       SourceSecurityGroupId: !Ref BastionSecurityGroup
-      FromPort: "0"
+      FromPort: 3306
       ToPort: 3306
 
   BastionSecurityGroupIngress:
@@ -140,7 +140,7 @@ Resources:
       GroupId: !Ref BastionSecurityGroup
       IpProtocol: tcp
       CidrIp: "0.0.0.0/0"
-      FromPort: "0"
+      FromPort: 22
       ToPort: 22
 
 
@@ -150,7 +150,7 @@ Resources:
       GroupId: !Ref BastionSecurityGroup
       IpProtocol: tcp
       CidrIp: "0.0.0.0/0"
-      FromPort: "0"
+      FromPort: 80
       ToPort: 80
 
   BastionSecurityGroupIngressSSL:
@@ -159,5 +159,5 @@ Resources:
       GroupId: !Ref BastionSecurityGroup
       IpProtocol: tcp
       CidrIp: "0.0.0.0/0"
-      FromPort: "0"
+      FromPort: 443
       ToPort: 443
