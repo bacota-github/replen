@@ -2,13 +2,14 @@ import boto3
 import sys
 import time
 
-if (len(sys.argv) < 3):
-    print("Required arguments: region stack-name database-password")
+if (len(sys.argv) < 2):
+    print("Required arguments: stack-name database-password")
     exit(1)
 
-region = sys.argv[1]
-stackName = sys.argv[2]
-password = sys.argv[3]
+stackName = sys.argv[1]
+password = sys.argv[2]
+
+region = 'us-west-2'
 
 def readFile(fileName, mode="r"):
     f = open(fileName, mode)
@@ -19,7 +20,7 @@ def readFile(fileName, mode="r"):
 cf = boto3.client('cloudformation', region_name=region)
 
 templateBody=readFile("replen.yml")
-
+print('Creating VPC and subnets')
 stackId = cf.create_stack(
     StackName=stackName,
     TemplateBody=templateBody
@@ -29,6 +30,7 @@ stackId = cf.create_stack(
 stacks=[]
 
 while (len(stacks) == 0 or stacks[0]['StackStatus'] == 'CREATE_IN_PROGRESS'):
+    print('...')
     time.sleep(5)
     stacks=cf.describe_stacks(
         StackName=stackName
@@ -47,6 +49,7 @@ idByName = {}
 for r in resources:
     idByName[r['LogicalResourceId']] = r['PhysicalResourceId']
 
+print('creating aurora cluster')
 rds = boto3.client('rds', region_name=region)
 response = rds.create_db_cluster(
     DatabaseName='replen',
@@ -71,6 +74,7 @@ sqlScript='loadReplen.sql'
 
 time.sleep(120) #wait for database cluster to be completed
 
+print('creating web server host')
 ec2Template=readFile('replen-bastion.yml')
 stackId = cf.create_stack(
     StackName=stackName+"-bastion",
@@ -90,9 +94,10 @@ stackId = cf.create_stack(
 stacks=[]
 
 while (len(stacks) == 0 or stacks[0]['StackStatus'] == 'CREATE_IN_PROGRESS'):
+    print('...')
     time.sleep(5)
     stacks=cf.describe_stacks(
         StackName=stackName+'-bastion'
     )['Stacks']
 
-print(stacks[0]['Outputs'][0]['OutputValue'])
+print('ip address of web server is ' + stacks[0]['Outputs'][0]['OutputValue'])
