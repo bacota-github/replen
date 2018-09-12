@@ -35,8 +35,8 @@ Resources:
         - Key: Name
           Value: REPLEN-Bastion
       KeyName: replen-server
-      ImageId: ami-02e08a9afb9fad731
+      ImageId: ami-03feb8c892434a0c5
 
 Outputs:
-  BastionId:
+  BastionIp:
     Value: !GetAtt BastionHost.PublicIp
