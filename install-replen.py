@@ -1,4 +1,5 @@
 import boto3
+import os
 import sys
 import time
 
@@ -8,6 +9,8 @@ if (len(sys.argv) < 2):
 
 stackName = sys.argv[1]
 password = sys.argv[2]
+
+dirname = os.path.dirname(sys.argv[0])
 
 region = 'us-west-2'
 
@@ -19,7 +22,7 @@ def readFile(fileName, mode="r"):
 
 cf = boto3.client('cloudformation', region_name=region)
 
-templateBody=readFile("replen.yml")
+templateBody=readFile(dirname + "/replen.yml")
 print('Creating VPC and subnets')
 stackId = cf.create_stack(
     StackName=stackName,
@@ -75,7 +78,7 @@ sqlScript='loadReplen.sql'
 time.sleep(120) #wait for database cluster to be completed
 
 print('creating web server host')
-ec2Template=readFile('replen-bastion.yml')
+ec2Template=readFile(dirname + '/replen-bastion.yml')
 stackId = cf.create_stack(
     StackName=stackName+"-bastion",
     TemplateBody=ec2Template,
@@ -100,4 +103,7 @@ while (len(stacks) == 0 or stacks[0]['StackStatus'] == 'CREATE_IN_PROGRESS'):
         StackName=stackName+'-bastion'
     )['Stacks']
 
-print('ip address of web server is ' + stacks[0]['Outputs'][0]['OutputValue'])
+if (stacks[0]['StackStatus'] == 'CREATE_COMPLETE'):
+    print('ip address of web server is ' + stacks[0]['Outputs'][0]['OutputValue'])
+else:
+    print('creation of bastion host failed.')
